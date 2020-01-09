@@ -44,6 +44,30 @@ class bst(){
 	const key_value& value() const { return content.second; }
    	key_value& value() {return content.second; }
    
+	// node find function
+        node* find(const value_type value);
+
+	// recursive function to insert a new node
+	node * insert (const key_type k, const key_value value, const bool substitution);
+   	
+	// recursive function to find the leftmost node in the bst
+	node *leftmost(){
+	
+	if(left)
+	   return left->leftmost();
+	else
+	   return this;
+	
+	}
+	
+	// clear node in the bst
+	void clear(){
+
+	   left.reset();
+	   right.reset();
+	}
+
+   
    };
   
    // class iterator
@@ -87,6 +111,15 @@ class bst(){
 	         current = current->parent;
 	   }
 	}
+
+	// post-increment operator overload
+	iterator operator++( int){
+	
+		iterator it{ *this};
+		++( *this);
+		return it;
+
+	}
    };
 
    // class const_iterator
@@ -119,16 +152,24 @@ class bst(){
    // the tail of the BST
    node * tail = nullptr;
 
+   // in-place balance of a section of the bst
+   // it receive as params the iterator to current position,
+   // node vector of raw pointers to nodes
+
+   void in_place_balance(iterator position, const std::vector<>& nodes);
+
    public:
    
    // default constructor
    bst () noexcept = default;
 
+
+   // COPY & MOVE
    // copy-constructor build by deep-copying
    bst ( const bst& c_bst );
 
    // copy-assignement operator overload
-   bst ( const bst & c_bst ){
+   bst& operator=( const bst& c_bst ){
 
       this->clear();
       auto tmp = c_bst;
@@ -151,55 +192,57 @@ class bst(){
 
    // default destructor
    ~bst() noexcept = default;
-
-   //node* find(const value_type); 
-   
+ 
    
    // INSERT FUNCTION
    // bool is true if the new node is allocated
    // iterator to the new node
-   //
    std::pair<iterator, bool> insert(const node& x);
-   std::pair<iterator, bool> insert(pair_type&& x);
+   std::pair<iterator, bool> insert(node&& x);
+
 
    // ITERATOR BEGIN
    // return iterator to the tail of the bst
    iterator begin() { return iterator{tail}; }
-   const_iterator begin() const;
-   const_iterator cbegin() const;
+   const_iterator begin() consti { return iterator{tail}; }
+   const_iterator cbegin() const { return const_iterator{tail}; }
+
 
    // ITERATOR END
    iterator end() { return iterator{nullptr}; }
-   const_iterator end() const;
-   const_iterator cend() const;
+   const_iterator end() const { return iterator{nullptr}; }
+   const_iterator cend() const { return const_iterator{nullptr}; }
+
 
    // FIND FUNCTION
    // returns an iterator to the proper node or ends()
-   iterator find(const key_type& x);
-   const_iterator find(const key_type& x) const;
+   iterator find(const key_value& x) { return iterator{ root->find(x) }; }
+   const_iterator find(const key_value& x) const { return const_iterator{ root->find(x) }; }
 
+   
    // BALANCE
    void balance();
 
+
    // PUT-TO OPERATOR
-   friend
-   std::ostream& operator<<(std::ostream& os, const bst& x);
+   // operator << overload
+   template <class okey_type, class o_keyvalue>
+   friend std::ostream& operator<<(std::ostream& os, const bst& x);
 
-   // COPY & MOVE
 
-	
+   // CLEAR
+   // remove all the nodes from the bst
    void clear(){
-	left.rest();
-	right.reset();
+	
+	root.reset();
    }
 
+
+   // EMPLACE FUNCTION
+   // container constructed in-place
+   template< class... Types >
+   std::pair<iterator,bool> emplace(Types&&... args);
 }
-
-
-// EMPLACE FUNCTION
-// container constucted in-place
-template< class... Types >
-std::pair<iterator,bool> emplace(Types&&... args);
 
 #include "bst.tpp"
 #endif
