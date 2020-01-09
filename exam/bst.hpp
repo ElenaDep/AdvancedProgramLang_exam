@@ -8,8 +8,11 @@
 #include <cmath>
 
 // binary search tree class:
-template <typename key_type, typename key_value, typename C=std::less<key_type>>
+template <typename key_type, typename key_value, typename key_comp=std::less<key_type>>
 class bst(){
+
+   // compe uso questo comparatore?
+   key_comp C;
 
    // struct node
    struct node{
@@ -48,7 +51,7 @@ class bst(){
         node* find(const value_type value);
 
 	// recursive function to insert a new node
-	node * insert (const key_type k, const key_value value, const bool substitution);
+	node* insert(const key_type k, const key_value value, const bool substitution);
    	
 	// recursive function to find the leftmost node in the bst
 	node *leftmost(){
