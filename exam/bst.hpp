@@ -1,27 +1,29 @@
-#ifndef bst
-#define bst
+#ifndef __BST__HPP__
+#define __BST__HPP__
 
 #include <iostream>
 #include <utility>
-#include <vector>
+#include <functional>
 #include <memory>
 #include <cmath>
+#include <vector>
+
 
 // binary search tree class:
-template <typename key_type, typename key_value, typename key_comp=std::less<key_type>>
-class bst(){
+template <typename K, typename V, typename C=std::less<K>>
+class bst {
 
-   // compe uso questo comparatore?
-   key_comp C;
-
+   // come uso questo comparatore?
+   //C cmp;
+   
    // struct node
    struct node{
 	
 	// content of the node: the key and the value
-	std::pair<key_type, key_value> content;
+	std::pair< const K, V> content;
 	
 	// raw pointer to parent node
-	node * parent = nullptr;
+	node* parent = nullptr;
 
 	// pointer to left node
 	std::unique_ptr<node> left = nullptr;
@@ -30,31 +32,35 @@ class bst(){
 	std::unique_ptr<node> right = nullptr;
 
 	// default constructor
-	node() : content{std::pair<key_type, key_value>{}}, parent{nullptr} {}
+	node() : content{ std::pair< const K, V>{} }, parent{nullptr} {}
 
 	// custom constructor	
-	node( key_type t, key_value v, node * par = nullptr)
-	   : content{ std::pair<key_type, key_value>(t,v) }, parent{par} {}
+	node( std::pair<const K, V>&& p, node* par = nullptr)
+	   : content{ std::move(p) }, parent{par} {}
 	
+        node( const std::pair<const K, V>& p, node* par = nullptr)
+	   : content{p}, parent{par} {}
+
 	// default destructor
 	~node() = default;
 
-	//node.type() returns the type
-	const key_type& type() const { return content.first; }
-	key_type& type() { return content.first; }
+	//node.key() returns the key
+	const K& key() const { return content.first; }
+	// questa no perche` K e` costante
+	// K& key() { return content.first; }
 	
 	//node.value() returns the value
-	const key_value& value() const { return content.second; }
-   	key_value& value() {return content.second; }
+	const V& value() const { return content.second; }
+   	V& value() {return content.second; }
    
 	// node find function
-        node* find(const value_type value);
+        node * find(const K key);
 
 	// recursive function to insert a new node
-	node* insert(const key_type k, const key_value value, const bool substitution);
+	std::pair< node*, bool> insert( std::pair<const K, const V> p, const bool sub = false );
    	
 	// recursive function to find the leftmost node in the bst
-	node *leftmost(){
+	node* leftmost(){
 	
 	if(left)
 	   return left->leftmost();
@@ -72,19 +78,44 @@ class bst(){
 
    
    };
-  
+   
+   // the root of the BSK
+   std::unique_ptr<node> root = nullptr;
+
+   // the tail of the BSK
+   node * tail = nullptr;
+
+   // in-place balance of a section of the bst
+   // it receive as params the iterator to current position,
+   // node vector of raw pointers to nodes
+   void in_place_balance( typename bst<K, V, C>::iterator pos, const std::vector<node*>& nodes);
+
+   public:
+   
+   //    
+   
+   bool cmp( K& k1, K& k2) { 
+	C c= C();
+	return c( k1, k2); 
+   }
+   bool cmp( const K& k1, K& k2) { 
+       C c = C();
+       return c( k1, k2); 
+   }
+   
    // class iterator
+   // it builds the new node
    class iterator{
 
 	node* current;
 
-      pubblic:
+      public:
 
 	// default constructor
 	iterator() noexcept = default;
 
 	// custom constructor
-	iterator(Node * n) {return *current; }
+	explicit iterator(node* x) : current{ x } {}
 
 	// de-reference operator overload:
 	// returns a reference to the de-referenced object of type node contained
@@ -94,25 +125,26 @@ class bst(){
 	// member-access operator overload:
 	// returns the raw pointer to the object of type node contained
 	// in the iterator
-	node* operator->() { return current; }
+	node* operator->() const { return current; }
 
 	// logical-equality operator overload:
 	// returns bool variable, true only if iterators contained 
 	// the same pointer
-	bool operator==() { return current == other.current; }
+	bool operator==(const iterator& other) { return current == other.current; }
    
-   	// logigal-inequality operator overload
-	bool operator!=() { return !( *this==other );}
+   	// logical-inequality operator overload
+	bool operator!=(const iterator& other) { return !( *this==other );}
    
    	// pre-increment operator overload
 	// returns a pointer to the net element of the bst hierarchy
 	iterator& operator++(){
 	   if ( current ){
-	      if(current->right)
-	         current= current->right->leftmost();
+	      if( current->right )
+	         current = current->right->leftmost();
 	      else
 	         current = current->parent;
 	   }
+	      return *this;
 	}
 
 	// post-increment operator overload
@@ -127,12 +159,12 @@ class bst(){
 
    // class const_iterator
    // it inherits from class iterator 
-   class const_iterator : public iterator<key_type, key_value>{
+   class const_iterator : public iterator {
 
       public:
  	
 	// 'Iterator' keyword definition
-	using Iterator = iterator<key_type, value_type>;
+	using Iterator = iterator;
 	using Iterator::iterator; 
 
 	// de-reference operator overload
@@ -148,20 +180,6 @@ class bst(){
 	using Iterator::operator!=;
    };
 
-   
-   // the root of the BST
-   std::unique_ptr<node> root = nullptr;
-
-   // the tail of the BST
-   node * tail = nullptr;
-
-   // in-place balance of a section of the bst
-   // it receive as params the iterator to current position,
-   // node vector of raw pointers to nodes
-
-   void in_place_balance(iterator position, const std::vector<>& nodes);
-
-   public:
    
    // default constructor
    bst () noexcept = default;
@@ -183,7 +201,7 @@ class bst(){
 
    // move constructor
    bst ( bst&& c_bst ) : root{std::move( c_bst.root )}, 
-		       tail{std::move( c_bst.tail )} {}
+		         tail{std::move( c_bst.tail )} {}
 
    // move-assignement operator
    bst& operator= ( bst&& c_bst ){
@@ -200,16 +218,21 @@ class bst(){
    // INSERT FUNCTION
    // bool is true if the new node is allocated
    // iterator to the new node
-   std::pair<iterator, bool> insert(const node& x);
-   std::pair<iterator, bool> insert(node&& x);
+   std::pair<iterator, bool> insert(const std::pair<K,V>& x);
+   //iterator insert(const std::pair<K,V>& x, const bool substitute = false );
 
 
    // ITERATOR BEGIN
    // return iterator to the tail of the bst
    iterator begin() { return iterator{tail}; }
-   const_iterator begin() consti { return iterator{tail}; }
+   const_iterator begin() const { return iterator{tail}; }
    const_iterator cbegin() const { return const_iterator{tail}; }
 
+   // Iterator to the root
+   iterator top() { return iterator{ root.get() }; }
+
+   // ConstIterator to the root 
+   const_iterator ctop() const { return const_iterator{ root.get() }; }
 
    // ITERATOR END
    iterator end() { return iterator{nullptr}; }
@@ -219,8 +242,9 @@ class bst(){
 
    // FIND FUNCTION
    // returns an iterator to the proper node or ends()
-   iterator find(const key_value& x) { return iterator{ root->find(x) }; }
-   const_iterator find(const key_value& x) const { return const_iterator{ root->find(x) }; }
+   iterator find(const K& k) { return iterator{ root->find(k) }; }
+   const_iterator find(const K& k) const { return const_iterator{ root->find(k) }; }
+
 
    
    // BALANCE
@@ -229,8 +253,8 @@ class bst(){
 
    // PUT-TO OPERATOR
    // operator << overload
-   template <class okey_type, class o_keyvalue>
-   friend std::ostream& operator<<(std::ostream& os, const bst& x);
+   template <class oK, class oV >
+      friend std::ostream& operator<< ( std::ostream& , bst< oK, oV >& );
 
 
    // CLEAR
@@ -240,12 +264,51 @@ class bst(){
 	root.reset();
    }
 
+   // ARRAY SUBSCRIPT OVERLOAD
+   V& operator[]( const K& key ) {
 
+   iterator n = find( key );
+    
+   if ( n == end() ) {
+      
+      n = insert( {key, 1. } ).first;
+      
+   }
+    
+   return n->value();
+    
+   }
+
+   // CONST ARRAY SUBSCRIPT OVERLOAD
+   const K& operator[]( const K key ) const {
+    
+      const_iterator n = find( key );
+    
+   if ( n == cend() ) {
+      throw key_not_found{ "\n I can't do that\n(key " +  std::to_string(key) + " is not present.)"};
+   }
+   
+   return n->value();
+    
+   }
+
+   // KEY NOT FOUND
+   struct key_not_found {
+    
+   std::string message;
+   key_not_found( const std::string &s ) : message{s} {}
+    
+   };
+
+
+/*
    // EMPLACE FUNCTION
    // container constructed in-place
    template< class... Types >
    std::pair<iterator,bool> emplace(Types&&... args);
-}
+*/
+
+};
 
 #include "bst.tpp"
 #endif
