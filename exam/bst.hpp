@@ -301,12 +301,12 @@ class bst {
    };
 
 
-/*
+
    // EMPLACE FUNCTION
    // container constructed in-place
    template< class... Types >
    std::pair<iterator,bool> emplace(Types&&... args);
-*/
+
 
 };
 

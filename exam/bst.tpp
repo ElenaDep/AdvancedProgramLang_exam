@@ -189,3 +189,10 @@ void bst< K, V, C>::in_place_balance ( bst< K, V, C>::iterator pos, const std::v
    }
    return;
 }
+
+
+template <typename K, typename V, typename C>
+template <typename... Types>
+std::pair<typename bst<K, V, C>::iterator,bool> bst<K, V, C>::emplace(Types&&... args){
+	return insert(std::pair<const K, V>{std::forward<Types>(args)...});
+}
